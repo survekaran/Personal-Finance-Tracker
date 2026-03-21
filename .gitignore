@@ -1,0 +1,13 @@
+# node
+node_modules/
+dist/
+build/
+
+# python
+__pycache__/
+*.pyc
+.env
+
+# general
+.env
+.DS_Store
