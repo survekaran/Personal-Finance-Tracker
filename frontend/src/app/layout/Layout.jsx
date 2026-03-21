@@ -16,6 +16,11 @@ import {
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { supabase } from '../../lib/supabase'
+
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+}
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -114,6 +119,13 @@ export function Layout() {
             </div>
           </div>
         </header>
+
+        <button
+        onClick={handleLogout}
+          className="text-sm text-gray-600 hover:text-red-600 transition-colors"
+        >
+          Sign Out
+        </button>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto">
