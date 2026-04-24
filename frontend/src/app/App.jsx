@@ -1,33 +1,35 @@
-import { useState, useEffect } from 'react'
-import { RouterProvider } from 'react-router'
-import { supabase } from '../lib/supabase'
-import { Login } from './pages/Login'
-import { router } from './routes'
+import React, { useState, useEffect } from 'react';
+import { FinanceDashboard } from '../components/FinanceDashboard';
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // Check local storage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+      if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
-    return () => subscription.unsubscribe()
-  }, [])
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-600">Loading...</p>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#121212] text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+      <FinanceDashboard theme={theme} toggleTheme={toggleTheme} />
     </div>
-  )
-
-  if (!user) return <Login onLogin={() => {}} />
-
-  return <RouterProvider router={router} />
+  );
 }
