@@ -73,6 +73,10 @@ export function FinanceDashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [currentMonth, setCurrentMonth] = useState('April');
   const [loading, setLoading] = useState(true);
+  const [expenseSearch, setExpenseSearch] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState('All');
+  const [incomeSearch, setIncomeSearch] = useState('');
+  const [incomeCategory, setIncomeCategory] = useState('All');
 
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -158,6 +162,48 @@ export function FinanceDashboard() {
     },
     { balance: 0 }
   );
+
+  const expenses = transactions.filter((tx) => tx.type === 'expense');
+  const totalExpenses = expenses.reduce((sum, tx) => sum + tx.amount, 0);
+  const topExpense = expenses.reduce((highest, tx) => {
+    if (!highest || tx.amount > highest.amount) return tx;
+    return highest;
+  }, null);
+
+  const expenseCategories = ['All', ...Array.from(new Set(expenses.map((tx) => tx.category)))];
+  const expensesByCategory = expenses.reduce((acc, tx) => {
+    acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+    return acc;
+  }, {});
+
+  const filteredExpenses = expenses.filter((tx) => {
+    const matchesSearch = tx.title.toLowerCase().includes(expenseSearch.toLowerCase());
+    const matchesCategory = expenseCategory === 'All' || tx.category === expenseCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const averageExpense = expenses.length ? totalExpenses / expenses.length : 0;
+
+  const income = transactions.filter((tx) => tx.type === 'income');
+  const totalIncome = income.reduce((sum, tx) => sum + tx.amount, 0);
+  const topIncome = income.reduce((highest, tx) => {
+    if (!highest || tx.amount > highest.amount) return tx;
+    return highest;
+  }, null);
+
+  const incomeCategories = ['All', ...Array.from(new Set(income.map((tx) => tx.category)))];
+  const incomeByCategory = income.reduce((acc, tx) => {
+    acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+    return acc;
+  }, {});
+
+  const filteredIncome = income.filter((tx) => {
+    const matchesSearch = tx.title.toLowerCase().includes(incomeSearch.toLowerCase());
+    const matchesCategory = incomeCategory === 'All' || tx.category === incomeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const averageIncome = income.length ? totalIncome / income.length : 0;
 
   if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
 
@@ -329,11 +375,307 @@ export function FinanceDashboard() {
           )}
 
           {activeSection === 'expenses' && (
-            <div className="text-xl font-semibold">Expense Section (build later)</div>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-gray-800">Expenses</h2>
+                <p className="text-sm text-gray-500">Track where your money is going this month.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Total spent</span>
+                    <TrendingDown size={20} className="text-[#C05746]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">₹{totalExpenses.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">{expenses.length} expense entries</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Average expense</span>
+                    <BarChart3 size={20} className="text-[#60a5fa]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">₹{averageExpense.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">Per transaction</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Largest spend</span>
+                    <CalendarIcon size={20} className="text-[#a78bfa]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">
+                    ₹{topExpense ? topExpense.amount.toFixed(2) : '0.00'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">{topExpense ? topExpense.title : 'No expenses yet'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+                <div className="space-y-6">
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex flex-col md:flex-row gap-3 md:items-center">
+                      <div className="relative flex-1">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          value={expenseSearch}
+                          onChange={(e) => setExpenseSearch(e.target.value)}
+                          placeholder="Search expenses"
+                          className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#C05746]"
+                        />
+                      </div>
+
+                      <select
+                        value={expenseCategory}
+                        onChange={(e) => setExpenseCategory(e.target.value)}
+                        className="md:w-52 p-3 border border-gray-200 rounded-xl bg-white outline-none focus:border-[#C05746]"
+                      >
+                        {expenseCategories.map((item) => (
+                          <option key={item}>{item}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-800">Expense list</h3>
+                      <span className="text-sm text-gray-400">{filteredExpenses.length} shown</span>
+                    </div>
+
+                    {filteredExpenses.length === 0 ? (
+                      <div className="py-10 text-center text-gray-400">
+                        No expenses match your filters.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredExpenses.map((tx) => (
+                          <div key={tx._id} className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${CATEGORIES[tx.category]?.color || CATEGORIES.Other.color}22` }}
+                              >
+                                <TrendingDown size={20} style={{ color: CATEGORIES[tx.category]?.color || CATEGORIES.Other.color }} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-800 truncate">{tx.title}</p>
+                                <p className="text-xs text-gray-500">
+                                  {tx.category} · {tx.date ? new Date(tx.date).toLocaleDateString() : 'No date'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-4">
+                              <span className="font-semibold text-[#C05746]">-₹{tx.amount.toFixed(2)}</span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEdit(tx)}
+                                  className="px-3 py-1.5 text-sm rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(tx._id)}
+                                  className="px-3 py-1.5 text-sm rounded-lg bg-red-50 text-red-700 hover:bg-red-100"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+                  <h3 className="font-semibold text-gray-800 mb-4">Category breakdown</h3>
+                  {Object.keys(expensesByCategory).length === 0 ? (
+                    <p className="text-sm text-gray-400">Add expenses to see categories.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(expensesByCategory)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([name, amount]) => {
+                          const percentage = totalExpenses ? (amount / totalExpenses) * 100 : 0;
+                          const color = CATEGORIES[name]?.color || CATEGORIES.Other.color;
+
+                          return (
+                            <div key={name}>
+                              <div className="flex items-center justify-between mb-2 text-sm">
+                                <span className="font-medium text-gray-700">{name}</span>
+                                <span className="text-gray-500">₹{amount.toFixed(2)}</span>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${percentage}%`, backgroundColor: color }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-400 mt-1">{percentage.toFixed(0)}% of expenses</p>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeSection === 'income' && (
-            <div className="text-xl font-semibold">Income Section (build later)</div>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-gray-800">Income</h2>
+                <p className="text-sm text-gray-500">Review your earnings and income sources for this month.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Total income</span>
+                    <TrendingUp size={20} className="text-[#34d399]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">₹{totalIncome.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">{income.length} income entries</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Average income</span>
+                    <BarChart3 size={20} className="text-[#60a5fa]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">₹{averageIncome.toFixed(2)}</p>
+                  <p className="text-xs text-gray-400 mt-2">Per transaction</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-500">Largest source</span>
+                    <CalendarIcon size={20} className="text-[#a78bfa]" />
+                  </div>
+                  <p className="text-3xl font-bold text-gray-800">
+                    ₹{topIncome ? topIncome.amount.toFixed(2) : '0.00'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">{topIncome ? topIncome.title : 'No income yet'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+                <div className="space-y-6">
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex flex-col md:flex-row gap-3 md:items-center">
+                      <div className="relative flex-1">
+                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          value={incomeSearch}
+                          onChange={(e) => setIncomeSearch(e.target.value)}
+                          placeholder="Search income"
+                          className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl outline-none focus:border-[#34d399]"
+                        />
+                      </div>
+
+                      <select
+                        value={incomeCategory}
+                        onChange={(e) => setIncomeCategory(e.target.value)}
+                        className="md:w-52 p-3 border border-gray-200 rounded-xl bg-white outline-none focus:border-[#34d399]"
+                      >
+                        {incomeCategories.map((item) => (
+                          <option key={item}>{item}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-800">Income list</h3>
+                      <span className="text-sm text-gray-400">{filteredIncome.length} shown</span>
+                    </div>
+
+                    {filteredIncome.length === 0 ? (
+                      <div className="py-10 text-center text-gray-400">
+                        No income entries match your filters.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredIncome.map((tx) => (
+                          <div key={tx._id} className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${CATEGORIES[tx.category]?.color || CATEGORIES.Other.color}22` }}
+                              >
+                                <TrendingUp size={20} style={{ color: CATEGORIES[tx.category]?.color || CATEGORIES.Other.color }} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-800 truncate">{tx.title}</p>
+                                <p className="text-xs text-gray-500">
+                                  {tx.category} · {tx.date ? new Date(tx.date).toLocaleDateString() : 'No date'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-4">
+                              <span className="font-semibold text-[#34d399]">+₹{tx.amount.toFixed(2)}</span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEdit(tx)}
+                                  className="px-3 py-1.5 text-sm rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(tx._id)}
+                                  className="px-3 py-1.5 text-sm rounded-lg bg-red-50 text-red-700 hover:bg-red-100"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+                  <h3 className="font-semibold text-gray-800 mb-4">Income sources</h3>
+                  {Object.keys(incomeByCategory).length === 0 ? (
+                    <p className="text-sm text-gray-400">Add income to see sources.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(incomeByCategory)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([name, amount]) => {
+                          const percentage = totalIncome ? (amount / totalIncome) * 100 : 0;
+                          const color = CATEGORIES[name]?.color || CATEGORIES.Other.color;
+
+                          return (
+                            <div key={name}>
+                              <div className="flex items-center justify-between mb-2 text-sm">
+                                <span className="font-medium text-gray-700">{name}</span>
+                                <span className="text-gray-500">₹{amount.toFixed(2)}</span>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${percentage}%`, backgroundColor: color }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-400 mt-1">{percentage.toFixed(0)}% of income</p>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeSection === 'reports' && (
