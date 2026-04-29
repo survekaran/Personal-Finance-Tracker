@@ -53,7 +53,7 @@ Personal Finance Tracker/
 ⚙️ Setup Instructions
 
 1️⃣ Clone the Repository
-git clone https://github.com/your-username/personal-finance-tracker.git
+git clone https://github.com/survekaran/personal-finance-tracker.git
 cd personal-finance-tracker
 
 2️⃣ Setup Backend
