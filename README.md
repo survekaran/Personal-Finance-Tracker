@@ -24,7 +24,8 @@ Node.js
 Express.js
 
 Database
-Supabase (as seen in your project)
+Supabase 
+
 
 
 📂 Project Structure
